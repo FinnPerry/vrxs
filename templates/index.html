@@ -1,0 +1,229 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>VRXS</title>
+  </head>
+  
+  <body class="pageBackground">
+    <div class="sectionBackground">
+      <h2 class="sectionTitle">Virtual Reality Exhibition Switchboard</h2>
+    </div>
+    
+    <div class="sectionBackground">
+      <h2 class="sectionTitle">Wireless Devices:</h2>
+      <div class="sectionContent">
+        {% if tcpip_devices|length == 0 %}
+          <p>No wireless devices are current connected.<br>Connect one by plugging it in via usb cable then clicking the "Start Wireless Connection" button.</p>
+        {% else %}
+          {% for device in tcpip_devices %}
+            {% if loop.index % 2 == 0 %}
+              {% set itemStyle = "listItemB"%}
+            {% else %}
+              {% set itemStyle = "listItemA"%}
+            {% endif %}
+            
+            <div class="{{ itemStyle }}">
+              <code class="listItemText">{{ device_name_map[device] }}</code>
+              <button type="button" onClick="run_scrcpy('{{ device }}')">Start Casting</button>
+              <button type="button" onClick="deactivate_tcpip('{{ device }}')">Disconnect</button>
+              <button type="button" onClick="start_app('{{ device }}')">Start App</button>
+              <button type="button" onClick="stop_app('{{ device }}')">Stop App</button>
+            </div>
+          {% endfor %}
+        {% endif %}
+
+        <br />
+        <button type="button" onClick="exit_scrcpy()">Stop Casting</button>
+      </div>
+    </div>
+
+    <div class="sectionBackground">
+      <h2 class="sectionTitle">Casting Settings:</h2>
+      <div class="sectionContent">
+        <input type="checkbox" id="castFullscreen" checked>Fullscreen</input>
+        <br>
+        <input type="checkbox" id="castTakeAudio">Take Audio</input>
+      </div>
+    </div>
+    
+    <div class="sectionBackground">
+      <h2 class="sectionTitle">Usb Devices:</h2>
+      <div class="sectionContent">
+        {% if usb_devices|length == 0 %}
+          <p>No usb devices are currently connected.<br>Connect one by plugging it in via usb cable.</p>
+        {% else %}
+          {% for device in usb_devices %}
+            {% if loop.index % 2 == 0 %}
+              {% set itemStyle = "listItemB"%}
+            {% else %}
+              {% set itemStyle = "listItemA"%}
+            {% endif %}
+            
+            <div class="{{ itemStyle }}">
+              <code class="listItemText">{{ device_name_map[device] }}</code>
+              <button type="button" onClick="activate_tcpip('{{ device }}')">Start Wireless Connection</button>
+            </div>
+          {% endfor %}
+        {% endif %}
+      </div>
+    </div>
+
+    <div class="sectionBackground">
+      <h2 class="sectionTitle">Instructions:</h2>
+      <div class="sectionContent">
+        <b>Initial Setup:</b>
+        <ol>
+          <li>Plug the headset into the host computer via usb cable.</li>
+          <li>Refresh the VRXS page. The headset should appear in the "Usb Devices" section of the page.</li>
+          <li>Click the "Start Wireless Connection" button next to the device name.</li>
+          <li>The headset should now appear in the "Wireless Devices" section of the page.</li>
+          <li>Repeat this process to connect all headsets.</li>
+        </ol>
+        <b>Casting:</b>
+        <ol>
+          <li>To start casting a headset, click the "Start Casting" button next to the desired headset in the "Wireless Devices" section of the page.</li>
+          <li>Click "Start Casting" on another headset to switch to it, or on the same headset again to restart the feed.</li>
+          <li>After changing casting settings, click "Start Casting" again to apply the new settings.</li>
+          <li>Click the "Stop Casting" button at the bottom of the "Wireless Devices" section to stop casting.</li>
+        </ol>
+        <b>Disconnecting:</b>
+        <ol>
+          <li>
+            Click the "Disconnect" button next to a headset in the "Wireless Devices" section to disconnect the device.<br>
+            This should only be done when you have finished exhibiting as you will have to redo the "Initial Setup" steps to reconnect the device.
+          </li>
+        </ol>
+        <b>Troubleshooting:</b>
+        <ol>
+          <li>
+            <b>Device not appearing:</b><br>
+            Occasionally when a headset is plugged in via usb cable, it will fail to appear in the "Usb Devices" section.<br>
+            If this occurs, try refreshing the page a few times.
+          </li>
+          <li>
+            <b>Casting shows both eyes:</b><br>
+            If you start casting and the video shows both eyes side by side
+            rather than a single view then restart the casting.<br>
+            This usually happens once the first time you start casting after connecting a headset.
+          </li>
+          <li>
+            <b>Video casting latency:</b><br>
+            When casting the same headset continuously, the latency of video feed may slowly increase resulting in the casting lagging seconds behind reality.<br>
+            To fix this, restart the casting by clicking the "Start Casting" button next to any device.
+          </li>
+          <li>
+            <b>Headset has no audio:</b><br>
+            Ensure the "Take Audio" setting is un-checked.
+          </li>
+        </ol>
+      </div>
+    </div>
+  </body>
+</html> 
+
+<script>
+  function activate_tcpip(device) {
+    var req = "activate_tcpip?device=" + device;
+    send_request(req, true);
+  }
+
+  function run_scrcpy(ip) {
+    var fullscreen = document.querySelector("#castFullscreen").checked;
+    var takeAudio = document.querySelector("#castTakeAudio").checked;
+    var req = "run_scrcpy?ip=" + ip
+            + "&full_screen=" + fullscreen
+            + "&with_audio=" + takeAudio;
+    send_request(req, false);
+  }
+
+  function start_app(ip) {
+    var req = "run_app?ip=" + ip
+            + "&app=com.iCinema.netARChiveMR";
+    send_request(req, false);
+  }
+
+  function stop_app(ip) {
+    var req = "stop_app?ip=" + ip
+            + "&app=com.iCinema.netARChiveMR";
+    send_request(req, false);
+  }
+
+  function exit_scrcpy() {
+    send_request("exit_scrcpy", false);
+  }
+
+  function deactivate_tcpip(ip) {
+    var req = "deactivate_tcpip?ip=" + ip;
+    send_request(req, true);
+  }
+
+  function send_request(request, reload) {
+    var req = new XMLHttpRequest();
+    req.open("get", request, true);
+    
+    if (reload)
+    {
+      req.onreadystatechange = function() {
+        // Check if the response is ready or still pending.
+        if (this.readyState == 4 && this.status == 200) {
+          location.reload();
+        }
+      };
+    }
+    
+    req.send();
+  }
+</script>
+
+<style>
+  .pageBackground {
+    background-color: lightblue;
+  }
+  
+  .sectionBackground {
+    background-color: lightgrey;
+    border: darkgrey solid 5px;
+    margin: 5px;
+  }
+  
+  .sectionTitle {
+    background-color: darkgrey;
+    padding: 5px;
+    margin: 0px;
+  }
+
+  .sectionContent {
+    padding: 5px;
+  }
+
+  .listItemA, .listItemB {
+    padding: 5px;
+  }
+
+  .listItemA {
+    background-color: white;
+  }
+
+  .listItemB {
+    background-color: darkgrey;
+  }
+
+  .listItemText {
+    padding: 2px;
+    background-color: lightgrey;
+    border: black solid 1px;
+  }
+
+  @font-face {
+    font-family: "Inter";
+    src: url("static/Inter.ttf")
+  }
+
+  * {
+    font-family: "Inter", sans-serif;
+  }
+
+  h2 {
+    font-size: 18px;
+  }
+</style>

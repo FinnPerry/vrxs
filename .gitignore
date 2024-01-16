@@ -1,0 +1,4 @@
+*.pyc
+notebooks/.ipynb_checkpoints/*
+tcpip_devices.json
+devicemap.txt

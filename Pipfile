@@ -1,0 +1,13 @@
+[[source]]
+url = "https://pypi.org/simple"
+verify_ssl = true
+name = "pypi"
+
+[packages]
+notebook = "*"
+flask = "*"
+waitress = "*"
+
+[dev-packages]
+black = {extras = ["jupyter"], version = "*"}
+pylint = "*"
