@@ -69,6 +69,8 @@ def run():
     for device in tcpip_devices:
         complete_device_name_map[device] = map_device_to_name(device)
 
+    tcpip_devices.sort(key=map_device_to_name)
+
     return render_template(
         "index.html",
         usb_devices=usb_devices,
